@@ -7,19 +7,15 @@ import telebot as telebot
 from requests import ReadTimeout
 from random import randrange
 
+from aes_cipher import AESCipher
+
 cipher_key = 'APM1JDVgT8WDGOWBgQv6EIhvxl4vDYvUnVdg-Vjdt0o='
 cipher_key_1 = 'NGWWUJqkriPUgapSWzEaxLetztK2oifQ--y3CJghE10='
 cipher_key_2 = '6CZZQ4YRWMIUcoWm36W_7sXmxMgvXZNHgns-kBfCnZc='
-# cipher_key_3 = 'K04UFxAoJDkj7ZW8tFM3AaRCJjQItuxVbO7SvngcuRQd'
-# cipher_key_4 = 'r3sow106iEIcEsDRHBeBQ0Muf6JKpOYc74PcrTP8qYwH'
-# cipher_key_5 = 'Ah7DiWb7faIDP0fR4OdA4ZK9DlDN90LvLpHWIJEox2cP'
 
 cipher = Fernet(cipher_key)
 cipher_1 = Fernet(cipher_key_1)
 cipher_2 = Fernet(cipher_key_2)
-# cipher_3 = Fernet(cipher_key_3)
-# cipher_4 = Fernet(cipher_key_4)
-# cipher_5 = Fernet(cipher_key_5)
 
 bot = telebot.TeleBot('6297351245:AAHdCO6fKhMHKR7xaK0EUPLRELSdRn1WPn8')
 allow_ids = [262007822, 123]
@@ -42,11 +38,50 @@ def send_encode(message):
         bot.register_next_step_handler(msg, encode_handler)
 
 
+@bot.message_handler(commands=["encodelight"])
+def send_encode_light(message):
+    if is_allow(message.chat.id):
+        msg = bot.send_message(message.chat.id, "Enter text to encode:")
+        bot.register_next_step_handler(msg, light_encode_handler)
+
+
 @bot.message_handler(commands=["decode"])
 def send_decode(message):
     if is_allow(message.chat.id):
         msg = bot.send_message(message.chat.id, "Enter text to decode:")
         bot.register_next_step_handler(msg, decode_handler)
+
+
+@bot.message_handler(commands=["decodelight"])
+def send_decode(message):
+    if is_allow(message.chat.id):
+        msg = bot.send_message(message.chat.id, "Enter text to decode:")
+        bot.register_next_step_handler(msg, light_decode_handler)
+
+
+def light_encode_handler(message):
+    init_text = message.text
+
+    cipher_light = AESCipher(cipher_key)
+    ciphertext = cipher_light.encrypt(init_text)
+
+    encoded = ciphertext#ciphertext.decode('utf8')
+    ans = ''
+    for c in encoded:
+        ans += shift(c, 3)
+    encoded = ans
+
+    ans = ''
+    for c in encoded:
+        ans += shift(c, 17)
+    encoded = ans
+
+    ans = ''
+    for c in encoded:
+        ans += shift(c, 7)
+    encoded = ans
+
+    bot.send_message(message.chat.id, f"{encoded}")
 
 
 def encode_handler(message):
@@ -98,8 +133,36 @@ def decode_handler(message):
     decoded = cipher_2.decrypt(str.encode(decoded)).decode()
     decoded = cipher_1.decrypt(str.encode(decoded)).decode()
     decoded = cipher.decrypt(str.encode(decoded)).decode()
-
+    # return decoded
     bot.send_message(message.chat.id, f"{decoded}")
+
+
+def light_decode_handler(message):
+    init_text = message.text
+
+    decoded = init_text
+
+    ans = ''
+    for c in decoded:
+        ans += back_shift(c, 7)
+    decoded = ans
+
+    ans = ''
+    for c in decoded:
+        ans += back_shift(c, 17)
+    decoded = ans
+
+    ans = ''
+    for c in decoded:
+        ans += back_shift(c, 3)
+    decoded = ans
+
+    cipher = AESCipher(cipher_key)
+    ciphertext = cipher.decrypt(decoded)
+    decoded = ciphertext
+    # return decoded
+    bot.send_message(message.chat.id, f"{decoded}")
+
 
 s = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_abcdefghijklmnopqrstuvwxyz{|}~'
 
