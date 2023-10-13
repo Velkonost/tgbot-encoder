@@ -22,7 +22,7 @@ allow_ids = [262007822, 123]
 
 
 def is_allow(_id):
-    return _id in allow_ids
+    return True#_id in allow_ids
 
 
 @bot.message_handler(commands=["start"])
